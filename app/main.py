@@ -9,6 +9,9 @@ import uvicorn
 import cv2
 from typing import List
 from pydantic import BaseModel
+import os
+import download_model
+import torch
 
 # Initialize FastAPI
 app = FastAPI(title="Dental X-Ray Detection API")
@@ -24,7 +27,17 @@ app.add_middleware(
 
 # Load YOLO Model
 try:
-    model = YOLO('app/models/model.pt')  # Ensure correct path
+    if not os.path.exists("app/models/model.pt"):
+        print("model not found. attempting to find...")
+        download_model.download()
+
+    if torch.cuda.is_available():
+        model = YOLO('app/models/model.pt', device='cuda')
+        print("Using GPU for inference.")
+    else:
+        model = YOLO('app/models/model.pt')
+        print("Using CPU for inference.")
+
     print("Model loaded successfully!")
 except Exception as e:
     print(f"Error loading model: {e}")

@@ -1,5 +1,5 @@
 input_img/
 env/
 runs/
-models/
+app/models/
 .env
