@@ -24,7 +24,7 @@ app.add_middleware(
 
 # Load YOLO Model
 try:
-    model = YOLO('models/best.pt')  # Ensure correct path
+    model = YOLO('app/models/model.pt')  # Ensure correct path
     print("Model loaded successfully!")
 except Exception as e:
     print(f"Error loading model: {e}")

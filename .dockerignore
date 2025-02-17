@@ -1,0 +1,24 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Ignore virtual environment
+venv/
+
+# Ignore system files
+.DS_Store
+*.swp
+*.swo
+
+# Ignore Git & IDE-related files
+.git/
+.gitignore
+.vscode/
+.idea/
+
+#other files
+main.html
+yolo_inference.py
