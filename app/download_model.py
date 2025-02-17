@@ -1,6 +1,14 @@
-import gdown
+try:
+    import gdown
+    from dotenv import load_dotenv
+except ImportError:
+    print("Downloading required libraries...")
+    import subprocess
+    subprocess.check_call(["pip", "install", "gdown", "python-dotenv"])
+    import gdown
+    from dotenv import load_dotenv
+
 import os
-from dotenv import load_dotenv
 
 def download():
     """Download the latest model from Google Drive."""
