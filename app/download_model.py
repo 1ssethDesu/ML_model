@@ -1,25 +1,19 @@
-try:
-    import gdown
-    from dotenv import load_dotenv
-except ImportError:
-    print("Downloading required libraries...")
-    import subprocess
-    subprocess.check_call(["pip", "install", "gdown", "python-dotenv"])
-    import gdown
-    from dotenv import load_dotenv
-
+import gdown
 import os
 
-def download():
+def download(model_path: str):
     """Download the latest model from Google Drive."""
-    dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-    load_dotenv(dotenv_path)
 
     url = os.getenv("MODEL_URL")
-    model_path = os.path.join("app", "models", "model.pt")
+    if not url:
+        raise ValueError("MODEL_URL environment variable is not set.")
 
-    if not os.path.exists("app/models"):
-        os.makedirs("app/models")
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
 
     print("getting latest model from Google Drive...")
     gdown.download(url=url, output=model_path, quiet=False, fuzzy=True)
+
+    if not os.path.exists(model_path):
+        raise FileNotFoundError("Model not found at path: {model_path}")
+    
+    print("Model downloaded successfully!")

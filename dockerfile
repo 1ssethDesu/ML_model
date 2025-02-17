@@ -13,20 +13,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install\
 # Install the requirements and libraries
 COPY ./requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install --no-cache-dir gdown
 
 # Copy application source code
 COPY ./app/ /code/app/
-
-# Create models directory
-RUN mkdir -p /code/app/models
-
-# Install gdown and download model
-RUN if [ ! -f "/code/app/models/model.pt" ]; then \
-        echo "Downloading model..."; \
-        gdown "$MODEL_URL" -O "/code/app/models/model.pt" --quiet --fuzzy; \
-    else \
-        echo "Model already exists, skipping download."; \
-    fi
 
 # Default command to run the application
 CMD ["python", "app/main.py", "--port", "8000"]
