@@ -20,9 +20,6 @@ COPY ./app/ /code/app/
 # Create models directory
 RUN mkdir -p /code/app/models
 
-# Copy environment file
-COPY .env /code/
-
 # Install gdown and download model
 RUN if [ ! -f "/code/app/models/model.pt" ]; then \
         echo "Downloading model..."; \
