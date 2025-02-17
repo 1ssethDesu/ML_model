@@ -24,10 +24,7 @@ RUN mkdir -p /code/app/models
 COPY .env /code/
 
 # Install gdown and download model
-RUN set -a && \
-    . /code/.env && \
-    set +a && \
-    if [ ! -f "/code/app/models/model.pt" ]; then \
+RUN if [ ! -f "/code/app/models/model.pt" ]; then \
         echo "Downloading model..."; \
         gdown "$MODEL_URL" -O "/code/app/models/model.pt" --quiet --fuzzy; \
     else \

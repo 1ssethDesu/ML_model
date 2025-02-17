@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  my_app:
+    build: .
+    environment:
+      - MODEL_URL=${MODEL_URL}
+    env_file:
+      - .env
