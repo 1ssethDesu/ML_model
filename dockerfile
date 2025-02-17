@@ -24,8 +24,7 @@ RUN mkdir -p /code/app/models
 COPY .env /code/
 
 # Install gdown and download model
-RUN pip install --no-cache-dir gdown && \
-    set -a && \
+RUN set -a && \
     . /code/.env && \
     set +a && \
     if [ ! -f "/code/app/models/model.pt" ]; then \
