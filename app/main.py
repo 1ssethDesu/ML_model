@@ -10,7 +10,7 @@ import cv2
 from typing import List
 from pydantic import BaseModel
 import os
-import download_model
+import app.download_model
 import torch
 
 # Initialize FastAPI
