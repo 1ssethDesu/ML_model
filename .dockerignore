@@ -20,6 +20,6 @@ venv/
 .idea/
 
 #other files
-main.html
+index.html
 yolo_inference.py
-app/models/
+convert_model.py

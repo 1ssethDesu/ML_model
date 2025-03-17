@@ -12,6 +12,7 @@ from pydantic import BaseModel
 import os
 import download_model
 import torch
+from mangum import Mangum
 
 # Load YOLO Model
 MODEL_PATH = "app/models/model.pt"
@@ -34,6 +35,7 @@ print("Model loaded successfully!")
 
 # Initialize FastAPI
 app = FastAPI(title="Dental X-Ray Detection API")
+handler = Mangum(app)
 
 # Enable CORS (For frontend communication)
 app.add_middleware(

@@ -26,7 +26,7 @@
             formData.append("file", fileInput.files[0]);
 
             try {
-                const response = await fetch("https://denteeth-ml-model-6jfn6.ondigitalocean.app/predict", {
+                const response = await fetch("http://localhost:8000/predict", {
                     method: "POST",
                     body: formData,
                 });
