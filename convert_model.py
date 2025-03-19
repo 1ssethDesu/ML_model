@@ -4,4 +4,4 @@ MODEL_PATH = "app/models/model.pt"
 
 model = YOLO(MODEL_PATH)
 
-model.export(format='onnx', simplify=False, dynamic=True, optimize=False)
+model.export(format='onnx', opset=12)

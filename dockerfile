@@ -38,4 +38,4 @@ COPY requirements.txt ${LAMBDA_TASK_ROOT}
 # Install Python dependencies
 RUN pip install -r requirements.txt --target ${LAMBDA_TASK_ROOT} --upgrade --no-cache-dir
 
-COPY app/models/model.pt ${LAMBDA_TASK_ROOT}/app/models/model.pt
+COPY app/models/model.onnx ${LAMBDA_TASK_ROOT}/app/models/model.onnx

@@ -1,22 +1,23 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from ultralytics import YOLO
 import numpy as np
-from PIL import Image
 import io
 import uvicorn
 import cv2
+import onnxruntime
 from typing import List
 from pydantic import BaseModel
 import os
 import download_model
-import torch
 from mangum import Mangum
 
-# Load YOLO Model
-MODEL_PATH = "app/models/model.pt"
+from util import helper
 
+# ONNX Model Path
+MODEL_PATH = "app/models/model.onnx"
+
+# Try to load the model
 try:
     if not os.path.exists(MODEL_PATH):
         download_model.download(MODEL_PATH)
@@ -24,14 +25,16 @@ except Exception as e:
     print(f"❌ Error loading model: {e}")
     raise
 
-if torch.cuda.is_available():
-    model = YOLO('app/models/model.pt', device='cuda')
-    print("Using GPU for inference.")
-else:
-    model = YOLO('app/models/model.pt')
-    print("Using CPU for inference.")
+# Initialize ONNX Runtime Session
+providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if onnxruntime.get_device() == 'GPU' else ['CPUExecutionProvider']
+session = onnxruntime.InferenceSession(MODEL_PATH, providers=providers)
 
+device = "GPU" if 'CUDAExecutionProvider' in session.get_providers() else "CPU"
+print(f"Using {device} for inference.")
 print("Model loaded successfully!")
+
+# Class names
+CLASSES = ['gum-disease', 'tooth-decay', 'tooth-loss']
 
 # Initialize FastAPI
 app = FastAPI(title="Dental X-Ray Detection API")
@@ -62,37 +65,89 @@ def read_root():
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     """Process the uploaded image, detect objects, and return the image with bounding boxes."""
-
     contents = await file.read()
-    image = Image.open(io.BytesIO(contents))
     
-    # Convert PIL Image to OpenCV format
-    image_cv = np.array(image)
-    image_cv = cv2.cvtColor(image_cv, cv2.COLOR_RGB2BGR)
-
-    # Run YOLO Model Prediction
-    results = model.predict(image)
-
+    # Convert to OpenCV format
+    nparr = np.frombuffer(contents, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Process image
+    img, img_h, img_w = helper.image_process(image)
+    
+    # Run inference
+    input_name = session.get_inputs()[0].name
+    output = session.run(None, {input_name: img})
+    
+    # Filter detections
+    results = helper.filter_detection(output)
+    
+    # Get rescaled results
+    rescaled_results, confidences = helper.rescale_back(results, img_w, img_h)
+    
+    # Draw results on image and prepare response
     detections = []
-    for box in results[0].boxes:
-        x1, y1, x2, y2 = [int(coord) for coord in box.xyxy[0]]
-        confidence = float(box.conf[0])
-        class_name = results[0].names[int(box.cls[0])]
-
-        # Draw bounding box
-        cv2.rectangle(image_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        label = f"{class_name}: {confidence:.2f}"
+    
+    for res, conf in zip(rescaled_results, confidences):
+        x1, y1, x2, y2, cls_id = res
+        cls_id = int(cls_id)
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        class_name = CLASSES[cls_id]
         
-        # Put label above bounding box
-        cv2.putText(image_cv, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-        # Save detection info
-        detections.append(Detection(class_name=class_name, confidence=confidence, bbox=[x1, y1, x2, y2]))
-
+        # Draw bounding box
+        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        
+        # Draw label
+        label = f"{class_name}:{conf:.2f}"
+        cv2.putText(image, label, (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        
+        # Add to detections list
+        detections.append(Detection(
+            class_name=class_name,
+            confidence=float(conf),
+            bbox=[x1, y1, x2, y2]
+        ))
+    
     # Convert OpenCV image back to bytes
-    _, encoded_img = cv2.imencode(".jpg", image_cv)
+    _, encoded_img = cv2.imencode(".jpg", image)
     return StreamingResponse(io.BytesIO(encoded_img.tobytes()), media_type="image/jpeg")
 
+@app.post("/predict_json")
+async def predict_json(file: UploadFile = File(...)):
+    """Process the uploaded image and return JSON with detection information only."""
+    contents = await file.read()
+    
+    # Convert to OpenCV format
+    nparr = np.frombuffer(contents, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Process image
+    img, img_h, img_w = helper.image_process(image)
+    
+    # Run inference
+    input_name = session.get_inputs()[0].name
+    output = session.run(None, {input_name: img})
+    
+    # Filter detections
+    results = helper.filter_detection(output)
+    
+    # Get rescaled results
+    rescaled_results, confidences = helper.rescale_back(results, img_w, img_h)
+    
+    # Prepare response
+    detections = []
+    for res, conf in zip(rescaled_results, confidences):
+        x1, y1, x2, y2, cls_id = res
+        cls_id = int(cls_id)
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        class_name = CLASSES[cls_id]
+        
+        detections.append(Detection(
+            class_name=class_name,
+            confidence=float(conf),
+            bbox=[x1, y1, x2, y2]
+        ))
+    
+    return PredictionResponse(detections=detections)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
