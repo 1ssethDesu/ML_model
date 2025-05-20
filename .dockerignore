@@ -23,3 +23,4 @@ venv/
 index.html
 yolo_inference.py
 convert_model.py
+v1/

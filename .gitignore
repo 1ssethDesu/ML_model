@@ -1,6 +1,4 @@
 input_img/
 env/
 runs/
-app/models/
-models/
 .env
