@@ -2,7 +2,7 @@ services:
   api:
     build: .
     container_name: denteeth_model_api_container
-    image: denteeth_model_api:strapi
+    image: denteeth_model_api:latest
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8080:8080"
