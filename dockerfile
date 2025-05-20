@@ -13,7 +13,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install\
 # Install the requirements and libraries
 COPY ./requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-RUN pip install --no-cache-dir gdown
 
 # Copy application source code
 COPY ./app/ /code/app/

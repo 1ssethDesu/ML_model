@@ -1,0 +1,8 @@
+services:
+  api:
+    build: .
+    container_name: denteeth_model_api_container
+    image: denteeth_model_api:strapi
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
