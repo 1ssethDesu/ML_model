@@ -1,8 +1,0 @@
-services:
-  api:
-    build: .
-    container_name: denteeth_model_api_container
-    image: denteeth_model_api:latest
-    restart: unless-stopped
-    ports:
-      - "8888:8888"
