@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pandas as pd
 
 # Image processing functions from provided code
 def image_process(image, input_shape=(640, 640)):
@@ -116,3 +117,23 @@ def rescale_back(results, img_w, img_h):
     keep, keep_confidences = NMS(boxes, confidence)
     
     return keep, keep_confidences
+
+def get_disease_info(disease):
+    disease_info = pd.read_csv('app/util/dental_diseases_info.csv')
+
+    matching_row = disease_info[disease_info['Disease'].str.lower() == disease.lower()]
+
+    if not matching_row.empty:
+        info = matching_row.iloc[0]
+        return {
+            "disease": info['Disease'],
+            "description": info['Description'],
+            "causes": info['Causes'],
+            "symptoms": info['Symptoms'],
+            "treatment": info['Treatment'],
+            "prevention": info['Prevention']
+        }
+    else:
+        return {
+            "error": "Disease not found"
+        }

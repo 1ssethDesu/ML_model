@@ -4,18 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dental X-Ray Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        #diseaseInfo {
+            margin-top: 20px;
+        }
+        
+        .disease-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        .disease-card h3 {
+            margin-top: 0;
+            color: #333;
+            text-transform: capitalize;
+        }
+        
+        .disease-card p {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        
+        .disease-card strong {
+            color: #555;
+        }
+        
+        #imagePreview {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Upload Dental X-Ray for Detection</h1>
     <input type="file" id="fileInput" accept="image/*">
     <button onclick="uploadImage()">Upload & Detect</button>
     <br><br>
-    <img id="imagePreview" style="max-width: 600px; display: none;">
+    <img id="imagePreview" style="display: none;">
     
+    <div id="diseaseInfo" style="display: none;"></div>
+
     <script>
         async function uploadImage() {
             const fileInput = document.getElementById("fileInput");
             const imagePreview = document.getElementById("imagePreview");
+            const diseaseInfoDiv = document.getElementById("diseaseInfo");
 
             if (fileInput.files.length === 0) {
                 alert("Please select an image!");
@@ -26,7 +87,7 @@
             formData.append("file", fileInput.files[0]);
 
             try {
-                const response = await fetch("http://localhost:8000/predict", {
+                const response = await fetch("http://localhost:8000/v2/predict", {
                     method: "POST",
                     body: formData,
                 });
@@ -35,15 +96,45 @@
                     throw new Error("Failed to process image");
                 }
 
-                // Convert response into image format
-                const blob = await response.blob();
-                const imgURL = URL.createObjectURL(blob);
+                const result = await response.json();
 
-                // Show processed image
+                console.log("Response:", result);
+
+                // Display base64 image
+                const imgURL = `data:image/jpeg;base64,${result.image}`;
                 imagePreview.src = imgURL;
                 imagePreview.style.display = "block";
+
+                // Display disease info
+                // console.log("Disease Info:", result.disease_info);
+
+                const diseaseInfoArray = result.disease_info;
+                
+                if (diseaseInfoArray && Array.isArray(diseaseInfoArray) && diseaseInfoArray.length > 0) {
+                    let htmlContent = '<h2>Detected Conditions:</h2>';
+                    
+                    diseaseInfoArray.forEach(info => {
+                        htmlContent += `
+                            <div class="disease-card">
+                                <h3>${info.class_name.replace('-', ' ')}</h3>
+                                <p><strong>Description:</strong> ${info.description}</p>
+                                <p><strong>Symptoms:</strong> ${info.symptoms}</p>
+                                <p><strong>Causes:</strong> ${info.causes}</p>
+                                <p><strong>Treatment:</strong> ${info.treatment}</p>
+                                <p><strong>Prevention:</strong> ${info.prevention}</p>
+                            </div>
+                        `;
+                    });
+                    
+                    diseaseInfoDiv.innerHTML = htmlContent;
+                    diseaseInfoDiv.style.display = "block";
+                } else {
+                    diseaseInfoDiv.innerHTML = `<p style="color: green;">No dental conditions detected in this image.</p>`;
+                    diseaseInfoDiv.style.display = "block";
+                }
             } catch (error) {
                 console.error("Error:", error);
+                alert("An error occurred while processing the image.");
             }
         }
     </script>
